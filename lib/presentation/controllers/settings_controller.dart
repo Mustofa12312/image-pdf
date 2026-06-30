@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/constants.dart';
+import '../../core/constants.dart';
 
 class SettingsController extends ChangeNotifier {
   late SharedPreferences _prefs;

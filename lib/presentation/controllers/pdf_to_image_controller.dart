@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../models/models.dart';
 import '../../services/converter_service.dart';
-import '../../core/constants.dart';
 
 enum PdfToImageState { idle, loading, converting, done, error }
 

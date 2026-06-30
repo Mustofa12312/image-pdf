@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../core/localization.dart';
-import '../../models/models.dart';
 import '../controllers/pdf_to_image_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../widgets/drop_zone_widget.dart';

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/localization.dart';
-import '../controllers/settings_controller.dart';
 import 'pdf_to_image_page.dart';
 import 'image_to_pdf_page.dart';
 import 'settings_page.dart';
