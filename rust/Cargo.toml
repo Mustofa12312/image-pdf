@@ -1,0 +1,38 @@
+[package]
+name = "pdf_converter_engine"
+version = "1.0.0"
+edition = "2021"
+description = "High-performance PDF ↔ Image conversion engine"
+
+[[bin]]
+name = "pdf_converter_engine"
+path = "src/main.rs"
+
+[dependencies]
+# PDF engine — PDFium wrapper
+pdfium-render = { version = "0.8", features = ["thread_safe"] }
+
+# Image processing
+image = { version = "0.25", features = ["png", "jpeg"] }
+
+# PDF creation (for Image → PDF)
+printpdf = "0.7"
+
+# Parallelism
+rayon = "1.10"
+
+# CLI parsing
+clap = { version = "4", features = ["derive"] }
+
+# JSON output
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Error handling
+anyhow = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
