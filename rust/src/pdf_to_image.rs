@@ -81,7 +81,7 @@ pub fn convert(
         .load_pdf_from_file(input_path, None)
         .with_context(|| "Failed to open PDF")?;
 
-    let total_pages = doc.pages().len();
+    let total_pages = doc.pages().len() as usize; // u16 → usize
 
     // Determine which pages to render
     let page_indices: Vec<usize> = if selected_pages.is_empty() {
@@ -112,7 +112,7 @@ pub fn convert(
     // Scale factor from DPI (PDFium renders at 72 DPI by default)
     let scale = dpi as f32 / 72.0;
 
-    // Process pages (sequential for PDFium thread safety, parallel image encoding)
+    // Render pages sequentially (PDFium is not thread-safe for rendering)
     let render_results: Vec<(usize, Vec<u8>, u32, u32)> = page_indices
         .iter()
         .map(|&page_idx| -> Result<(usize, Vec<u8>, u32, u32)> {
@@ -124,10 +124,11 @@ pub fn convert(
             let bitmap = page.render_with_config(
                 &PdfRenderConfig::new()
                     .set_target_size(width as i32, height as i32)
-                    .set_clear_before_rendering(true),
+                    .clear_before_rendering(true), // Fixed method name
             )?;
 
-            let raw = bitmap.as_bytes().to_vec();
+            // Fixed: use as_raw_bytes() instead of deprecated as_bytes()
+            let raw = bitmap.as_raw_bytes().to_vec();
             Ok((page_idx, raw, width, height))
         })
         .collect::<Result<Vec<_>>>()?;
@@ -157,8 +158,9 @@ pub fn convert(
             match format {
                 "png" => img.save(&out_filename).with_context(|| format!("Cannot save {}", out_filename))?,
                 "jpg" | "jpeg" => {
+                    use image::codecs::jpeg::JpegEncoder;
                     let mut file = std::fs::File::create(&out_filename)?;
-                    let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut file, quality);
+                    let mut encoder = JpegEncoder::new_with_quality(&mut file, quality);
                     encoder.encode_image(&img)?;
                 }
                 _ => anyhow::bail!("Unsupported format: {}", format),

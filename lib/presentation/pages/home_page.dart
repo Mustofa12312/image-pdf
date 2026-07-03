@@ -41,8 +41,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         child: Stack(
           children: [
             if (isDark) ...[
-              Positioned(top: -100, left: -100, child: _GlowCircle(color: AppColors.accentPrimary, size: 400)),
-              Positioned(bottom: -120, right: -80, child: _GlowCircle(color: AppColors.accentTeal, size: 350)),
+              const Positioned(top: -100, left: -100, child: _GlowCircle(color: AppColors.accentPrimary, size: 400)),
+              const Positioned(bottom: -120, right: -80, child: _GlowCircle(color: AppColors.accentTeal, size: 350)),
             ],
             Positioned(top: 20, right: 20,
               child: IconButton(

@@ -37,10 +37,15 @@ class ConverterService {
         'Run: cd rust && cargo build --release');
   }
 
+  Map<String, String> _getEnvironment(String execPath) {
+    if (Platform.isLinux) return {'LD_LIBRARY_PATH': p.dirname(execPath)};
+    return {};
+  }
+
   /// Get PDF page info (count, dimensions)
   Future<List<PdfPageInfo>> getPdfInfo(String pdfPath) async {
     final exec = await _getExecutablePath();
-    final result = await Process.run(exec, ['info', '--input', pdfPath]);
+    final result = await Process.run(exec, ['info', '--input', pdfPath], environment: _getEnvironment(exec));
     if (result.exitCode != 0) {
       _throwRustError(result.stderr.toString());
     }
@@ -74,7 +79,7 @@ class ConverterService {
       '--progress', // Rust will emit JSON progress to stdout
     ];
 
-    final process = await Process.start(exec, args);
+    final process = await Process.start(exec, args, environment: _getEnvironment(exec));
     int current = 0;
     int total = 0;
     final outputFiles = <String>[];
@@ -137,7 +142,7 @@ class ConverterService {
       ...images.map((img) => '${img.path}:${img.rotationDegrees}'),
     ];
 
-    final process = await Process.start(exec, args);
+    final process = await Process.start(exec, args, environment: _getEnvironment(exec));
     final outputFiles = <String>[];
 
     await for (final line in process.stdout.transform(utf8.decoder).transform(const LineSplitter())) {
@@ -169,11 +174,11 @@ class ConverterService {
   }
 
   void _throwRustError(String stderr) {
-    if (stderr.contains('password')) throw ConversionException('err_pdf_password');
-    if (stderr.contains('corrupt') || stderr.contains('invalid')) throw ConversionException('err_pdf_corrupt');
-    if (stderr.contains('permission') || stderr.contains('writable')) throw ConversionException('err_folder_not_writable');
-    if (stderr.contains('in use') || stderr.contains('locked')) throw ConversionException('err_file_in_use');
-    throw ConversionException('err_conversion_failed');
+    if (stderr.contains('password')) throw const ConversionException('err_pdf_password');
+    if (stderr.contains('corrupt') || stderr.contains('invalid')) throw const ConversionException('err_pdf_corrupt');
+    if (stderr.contains('permission') || stderr.contains('writable')) throw const ConversionException('err_folder_not_writable');
+    if (stderr.contains('in use') || stderr.contains('locked')) throw const ConversionException('err_file_in_use');
+    throw const ConversionException('err_conversion_failed');
   }
 }
 

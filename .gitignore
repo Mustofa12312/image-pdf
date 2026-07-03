@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Rust and Engine binaries
+rust/target/
+engine_bin/
+*.tgz
+*.dll
+*.so
+*.exe

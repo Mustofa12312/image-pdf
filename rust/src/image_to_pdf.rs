@@ -1,7 +1,9 @@
 use anyhow::{Context, Result};
-use image::{DynamicImage, GenericImageView, ImageReader};
+use image::DynamicImage;
+use printpdf::{Image as PdfImage, ImageTransform, Mm, PdfDocument};
 use serde::Serialize;
-use std::io::Cursor;
+use std::fs::File;
+use std::io::BufWriter;
 
 #[derive(Serialize)]
 pub struct ConversionResult {
@@ -24,33 +26,41 @@ struct ProgressMsg {
     total: usize,
 }
 
-// Points per inch for PDF
-const PTS_PER_INCH: f32 = 72.0;
-
 pub fn convert(
     inputs: &[(String, u32)], // (path, rotation_degrees)
     output_path: &str,
     paper: &str,
     orientation: &str,
-    margin: f32,
+    margin: f32,         // in points
     show_progress: bool,
 ) -> Result<ConversionResult> {
-    use printpdf::*;
-    use std::fs::File;
-    use std::io::BufWriter;
-
     let total = inputs.len();
+    if total == 0 {
+        anyhow::bail!("No images provided");
+    }
 
-    // Parse paper dimensions in points
-    let (pw, ph) = paper_size_pts(paper);
-    let (page_w, page_h) = if orientation == "landscape" {
-        (Mm(ph * 25.4 / 72.0), Mm(pw * 25.4 / 72.0))
+    // Paper dimensions in mm
+    let (pw_mm, ph_mm): (f32, f32) = paper_size_mm(paper);
+    let (page_w_mm, page_h_mm) = if orientation.to_lowercase() == "landscape" {
+        (ph_mm, pw_mm)
     } else {
-        (Mm(pw * 25.4 / 72.0), Mm(ph * 25.4 / 72.0))
+        (pw_mm, ph_mm)
     };
 
-    // Create PDF document
-    let (doc, page1, layer1) = PdfDocument::new("output", page_w, page_h, "Layer 1");
+    // Margin: points → mm
+    let margin_mm: f32 = margin * 25.4 / 72.0;
+
+    // Create PDF — use first image for "Original" size
+    let first_img = load_image(&inputs[0].0, inputs[0].1)?;
+    let (fi_w, fi_h) = (first_img.width(), first_img.height());
+
+    let (doc_w_mm, doc_h_mm): (f32, f32) = if paper == "Original" {
+        (fi_w as f32 * 25.4 / 96.0, fi_h as f32 * 25.4 / 96.0)
+    } else {
+        (page_w_mm, page_h_mm)
+    };
+
+    let (doc, page1, layer1) = PdfDocument::new("PDF Converter Output", Mm(doc_w_mm), Mm(doc_h_mm), "Layer 1");
 
     for (i, (img_path, rotation)) in inputs.iter().enumerate() {
         if show_progress {
@@ -58,65 +68,68 @@ pub fn convert(
             println!("{}", serde_json::to_string(&msg).unwrap());
         }
 
-        let img = ImageReader::open(img_path)
-            .with_context(|| format!("Cannot open image: {}", img_path))?
-            .decode()
-            .with_context(|| format!("Cannot decode image: {}", img_path))?;
+        let dyn_img = load_image(img_path, *rotation)?;
+        let (img_w_px, img_h_px) = (dyn_img.width(), dyn_img.height());
 
-        // Apply rotation
-        let img = apply_rotation(img, *rotation);
-        let (img_w, img_h) = img.dimensions();
-
-        // Determine display page
-        let (cur_page, cur_layer) = if i == 0 {
-            (page1, layer1)
+        // Page size for this image
+        let (cur_w_mm, cur_h_mm): (f32, f32) = if paper == "Original" {
+            (img_w_px as f32 * 25.4 / 96.0, img_h_px as f32 * 25.4 / 96.0)
         } else {
-            let (p, l) = doc.add_page(page_w, page_h, "Layer 1");
-            (p, l)
+            (page_w_mm, page_h_mm)
         };
 
-        let layer = doc.get_page(cur_page).get_layer(cur_layer);
-
-        // Calculate image placement respecting margin
-        let margin_mm = margin * 25.4 / PTS_PER_INCH;
-        let avail_w = page_w.0 - 2.0 * margin_mm;
-        let avail_h = page_h.0 - 2.0 * margin_mm;
-
-        let img_aspect = img_w as f32 / img_h as f32;
-        let avail_aspect = avail_w / avail_h;
-
-        let (draw_w, draw_h) = if paper == "Original" {
-            (img_w as f32 * 25.4 / 96.0, img_h as f32 * 25.4 / 96.0) // 96 DPI screen
-        } else if img_aspect > avail_aspect {
-            (avail_w, avail_w / img_aspect)
+        // Get layer for this page
+        let layer = if i == 0 {
+            doc.get_page(page1).get_layer(layer1)
         } else {
-            (avail_h * img_aspect, avail_h)
+            let (p, l) = doc.add_page(Mm(cur_w_mm), Mm(cur_h_mm), "Layer 1");
+            doc.get_page(p).get_layer(l)
         };
 
-        let x_offset = margin_mm + (avail_w - draw_w) / 2.0;
-        let y_offset = margin_mm + (avail_h - draw_h) / 2.0;
+        // Available area after margin
+        let avail_w = cur_w_mm - 2.0 * margin_mm;
+        let avail_h = cur_h_mm - 2.0 * margin_mm;
 
-        // Encode image to bytes for PDF embedding
-        let mut buf = Cursor::new(Vec::new());
-        img.write_to(&mut buf, image::ImageFormat::Png)?;
-        let image_bytes = buf.into_inner();
+        // Scale image to fit available area while keeping aspect ratio
+        let (draw_w_mm, draw_h_mm): (f32, f32) = if paper == "Original" {
+            (avail_w, avail_h)
+        } else {
+            let img_aspect = img_w_px as f32 / img_h_px as f32;
+            let avail_aspect = avail_w / avail_h;
+            if img_aspect > avail_aspect {
+                (avail_w, avail_w / img_aspect)
+            } else {
+                (avail_h * img_aspect, avail_h)
+            }
+        };
 
-        let pdf_img = printpdf::Image::from_dynamic_image(&img);
+        let x_off = margin_mm + (avail_w - draw_w_mm) / 2.0;
+        let y_off = margin_mm + (avail_h - draw_h_mm) / 2.0;
+
+        // DPI for the image: we want img_w_px pixels = draw_w_mm mm
+        // DPI = px / (mm / 25.4) = px * 25.4 / mm
+        let render_dpi = img_w_px as f32 * 25.4 / draw_w_mm;
+
+        // Build printpdf Image using from_dynamic_image (requires embedded_images feature)
+        let pdf_img = PdfImage::from_dynamic_image(&dyn_img);
+
         pdf_img.add_to_layer(
-            layer.clone(),
-            printpdf::ImageTransform {
-                translate_x: Some(Mm(x_offset)),
-                translate_y: Some(Mm(y_offset)),
-                scale_x: Some(draw_w / (img_w as f32 * 25.4 / 96.0)),
-                scale_y: Some(draw_h / (img_h as f32 * 25.4 / 96.0)),
-                ..Default::default()
+            layer,
+            ImageTransform {
+                translate_x: Some(Mm(x_off)),
+                translate_y: Some(Mm(y_off)),
+                scale_x: None,
+                scale_y: None,
+                rotate: None,
+                dpi: Some(render_dpi),
             },
         );
     }
 
-    // Save PDF
-    let file = File::create(output_path).with_context(|| format!("Cannot create output: {}", output_path))?;
-    doc.save(&mut BufWriter::new(file)).with_context(|| "Cannot write PDF")?;
+    let file = File::create(output_path)
+        .with_context(|| format!("Cannot create: {}", output_path))?;
+    doc.save(&mut BufWriter::new(file))
+        .with_context(|| "Cannot save PDF")?;
 
     Ok(ConversionResult {
         result_type: "result".to_string(),
@@ -128,19 +141,24 @@ pub fn convert(
     })
 }
 
-fn paper_size_pts(paper: &str) -> (f32, f32) {
-    match paper {
-        "A4" => (595.28, 841.89),
-        "Letter" => (612.0, 792.0),
-        _ => (595.28, 841.89), // Default to A4
-    }
-}
+fn load_image(path: &str, rotation: u32) -> Result<DynamicImage> {
+    let img = image::io::Reader::open(path)
+        .with_context(|| format!("Cannot open: {}", path))?
+        .decode()
+        .with_context(|| format!("Cannot decode: {}", path))?;
 
-fn apply_rotation(img: DynamicImage, degrees: u32) -> DynamicImage {
-    match degrees % 360 {
+    Ok(match rotation % 360 {
         90 => img.rotate90(),
         180 => img.rotate180(),
         270 => img.rotate270(),
         _ => img,
+    })
+}
+
+fn paper_size_mm(paper: &str) -> (f32, f32) {
+    match paper {
+        "A4" => (210.0, 297.0),
+        "Letter" => (215.9, 279.4),
+        _ => (210.0, 297.0),
     }
 }

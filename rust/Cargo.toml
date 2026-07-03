@@ -12,11 +12,11 @@ path = "src/main.rs"
 # PDF engine — PDFium wrapper
 pdfium-render = { version = "0.8", features = ["thread_safe"] }
 
-# Image processing
-image = { version = "0.25", features = ["png", "jpeg"] }
+# Image processing — must match printpdf 0.7's image dependency (0.24)
+image = { version = "0.24", features = ["png", "jpeg"] }
 
 # PDF creation (for Image → PDF)
-printpdf = "0.7"
+printpdf = { version = "0.7", features = ["embedded_images"] }
 
 # Parallelism
 rayon = "1.10"

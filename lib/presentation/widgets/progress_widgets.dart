@@ -48,7 +48,7 @@ class ProgressOverlay extends StatelessWidget {
               const Spacer(),
               Text(
                 '$percent%',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.accentPrimary,
                   fontWeight: FontWeight.w700,
                   fontSize: 16,

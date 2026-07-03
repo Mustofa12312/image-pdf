@@ -103,7 +103,7 @@ class SettingsPage extends StatelessWidget {
                   _SectionHeader('About', isDark),
                   const SizedBox(height: 12),
                   _SettingsCard(isDark: isDark, children: [
-                    _SettingRow(label: 'Version', isDark: isDark, trailing: Text('1.0.0', style: TextStyle(color: AppColors.accentPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
+                    _SettingRow(label: 'Version', isDark: isDark, trailing: const Text('1.0.0', style: TextStyle(color: AppColors.accentPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
                     _Divider(isDark),
                     _SettingRow(label: 'Platform', isDark: isDark, trailing: Text('Windows 10/11 x64', style: TextStyle(color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary, fontSize: 13))),
                     _Divider(isDark),
@@ -129,7 +129,7 @@ class _SectionHeader extends StatelessWidget {
   final String text; final bool isDark;
   const _SectionHeader(this.text, this.isDark);
   @override
-  Widget build(BuildContext context) => Text(text.toUpperCase(), style: TextStyle(color: AppColors.accentPrimary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2));
+  Widget build(BuildContext context) => Text(text.toUpperCase(), style: const TextStyle(color: AppColors.accentPrimary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2));
 }
 
 class _SettingsCard extends StatelessWidget {
