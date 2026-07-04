@@ -110,7 +110,7 @@ pub fn convert(
         // DPI = px / (mm / 25.4) = px * 25.4 / mm
         let render_dpi = img_w_px as f32 * 25.4 / draw_w_mm;
 
-        // Build printpdf Image using from_dynamic_image (requires embedded_images feature)
+        // Build printpdf Image from DynamicImage (requires embedded_images feature)
         let pdf_img = PdfImage::from_dynamic_image(&dyn_img);
 
         pdf_img.add_to_layer(
