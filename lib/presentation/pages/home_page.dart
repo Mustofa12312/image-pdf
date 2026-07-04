@@ -3,6 +3,8 @@ import '../../core/theme.dart';
 import '../../core/localization.dart';
 import 'pdf_to_image_page.dart';
 import 'image_to_pdf_page.dart';
+import 'merge_pdf_page.dart';
+import 'extract_pdf_page.dart';
 import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -88,6 +90,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           icon: Icons.image_rounded, iconColor: AppColors.accentTeal,
                           label: loc.btnImageToPdf, subtitle: 'PNG / JPG → PDF', isDark: isDark,
                           onTap: () => _push(context, const ImageToPdfPage()),
+                        ),
+                        const SizedBox(height: 16),
+                        _MenuCard(
+                          icon: Icons.merge_type_rounded, iconColor: AppColors.accentPrimary,
+                          label: 'Merge PDFs', subtitle: 'PDF + PDF → PDF', isDark: isDark,
+                          onTap: () => _push(context, const MergePdfPage()),
+                        ),
+                        const SizedBox(height: 16),
+                        _MenuCard(
+                          icon: Icons.find_in_page_rounded, iconColor: AppColors.error,
+                          label: 'Extract Pages', subtitle: 'Extract specific pages from PDF', isDark: isDark,
+                          onTap: () => _push(context, const ExtractPdfPage()),
                         ),
                         const SizedBox(height: 48),
                         Text('v1.0.0  •  100% Offline', style: TextStyle(color: isDark ? AppColors.textMuted : AppColors.lightTextSecondary, fontSize: 11)),

@@ -6,11 +6,13 @@ import '../../core/localization.dart';
 
 class DropZoneWidget extends StatefulWidget {
   final bool isPdf; // true = PDF, false = images
+  final bool allowMultiplePdf; // if true, allows dropping/picking multiple PDFs
   final void Function(List<String> paths) onFilesDropped;
 
   const DropZoneWidget({
     super.key,
     required this.isPdf,
+    this.allowMultiplePdf = false,
     required this.onFilesDropped,
   });
 
@@ -35,8 +37,14 @@ class _DropZoneWidgetState extends State<DropZoneWidget> {
       onDragDone: (detail) {
         final paths = detail.files.map((f) => f.path).toList();
         if (widget.isPdf) {
-          final pdf = paths.where((p) => p.toLowerCase().endsWith('.pdf')).toList();
-          if (pdf.isNotEmpty) widget.onFilesDropped([pdf.first]);
+          final pdfs = paths.where((p) => p.toLowerCase().endsWith('.pdf')).toList();
+          if (pdfs.isNotEmpty) {
+            if (widget.allowMultiplePdf) {
+              widget.onFilesDropped(pdfs);
+            } else {
+              widget.onFilesDropped([pdfs.first]);
+            }
+          }
         } else {
           final imgs = paths
               .where((p) => RegExp(r'\.(png|jpg|jpeg)$', caseSensitive: false).hasMatch(p))
@@ -109,10 +117,12 @@ class _DropZoneWidgetState extends State<DropZoneWidget> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf'],
-        dialogTitle: 'Select PDF file',
+        allowMultiple: widget.allowMultiplePdf,
+        dialogTitle: 'Select PDF file(s)',
       );
-      if (result != null && result.files.single.path != null) {
-        widget.onFilesDropped([result.files.single.path!]);
+      if (result != null) {
+        final paths = result.files.where((f) => f.path != null).map((f) => f.path!).toList();
+        if (paths.isNotEmpty) widget.onFilesDropped(paths);
       }
     } else {
       final result = await FilePicker.platform.pickFiles(
