@@ -124,7 +124,9 @@ pub fn convert(
             let bitmap = page.render_with_config(
                 &PdfRenderConfig::new()
                     .set_target_size(width as i32, height as i32)
-                    .clear_before_rendering(true), // Fixed method name
+                    .clear_before_rendering(true)
+                    .render_annotations(true)
+                    .use_lcd_text_rendering(true),
             )?;
 
             // Fixed: use as_raw_bytes() instead of deprecated as_bytes()
@@ -145,13 +147,28 @@ pub fn convert(
                 format
             );
 
-            // PDFium gives BGRA; convert to RGB
+            // PDFium gives BGRA; convert to RGB and blend over a white background
             let img: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::from_fn(width, height, |x, y| {
                 let off = (y * width + x) as usize * 4;
-                if off + 2 < raw.len() {
-                    Rgb([raw[off + 2], raw[off + 1], raw[off]]) // BGRA → RGB
+                if off + 3 < raw.len() {
+                    let b = raw[off] as u32;
+                    let g = raw[off + 1] as u32;
+                    let r = raw[off + 2] as u32;
+                    let a = raw[off + 3] as u32;
+
+                    if a == 255 {
+                        Rgb([r as u8, g as u8, b as u8])
+                    } else if a == 0 {
+                        Rgb([255, 255, 255])
+                    } else {
+                        // Blend over white (255, 255, 255) to fix transparency/shadow artifacts
+                        let r_out = ((r * a + 255 * (255 - a)) / 255) as u8;
+                        let g_out = ((g * a + 255 * (255 - a)) / 255) as u8;
+                        let b_out = ((b * a + 255 * (255 - a)) / 255) as u8;
+                        Rgb([r_out, g_out, b_out])
+                    }
                 } else {
-                    Rgb([0, 0, 0])
+                    Rgb([255, 255, 255])
                 }
             });
 
