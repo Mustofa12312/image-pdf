@@ -40,7 +40,7 @@ Future<void> main() async {
   // 2. Download PDFium
   print('\n[2/3] Downloading PDFium...');
   final pdfiumUrl = isWindows
-      ? 'https://github.com/bblanchon/pdfium-binaries/releases/download/chromium/7920/pdfium-windows-x64.tgz'
+      ? 'https://github.com/bblanchon/pdfium-binaries/releases/download/chromium/7920/pdfium-win-x64.tgz'
       : 'https://github.com/bblanchon/pdfium-binaries/releases/download/chromium/7920/pdfium-linux-x64.tgz';
 
   final archivePath = p.join(Directory.current.path, 'pdfium.tgz');
