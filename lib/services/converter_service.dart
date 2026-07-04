@@ -25,8 +25,8 @@ class ConverterService {
     final candidates = [
       p.join(appDirParent, execName),
       p.join(appDirParent, 'data', 'flutter_assets', execName),
-      p.join(Directory.current.path, 'rust', 'target', 'debug', execName),
       p.join(Directory.current.path, 'rust', 'target', 'release', execName),
+      p.join(Directory.current.path, 'rust', 'target', 'debug', execName),
     ];
 
     for (final candidate in candidates) {

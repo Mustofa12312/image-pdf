@@ -113,12 +113,12 @@ install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    COMPONENT Runtime)
 
 # Install engine files if they exist
-set(ENGINE_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/engine_bin/linux")
+set(ENGINE_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../engine_bin/linux")
 if(EXISTS "${ENGINE_BIN_DIR}")
   install(DIRECTORY "${ENGINE_BIN_DIR}/"
     DESTINATION "${CMAKE_INSTALL_PREFIX}"
     COMPONENT Runtime
-    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+    USE_SOURCE_PERMISSIONS)
 endif()
 
 # Fully re-copy the assets directory on each build to avoid having stale files

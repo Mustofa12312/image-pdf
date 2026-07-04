@@ -1,0 +1,50 @@
+name: Windows Release Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  build-windows:
+    name: Build Windows Desktop
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows Desktop Support
+        run: flutter config --enable-windows-desktop
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install Flutter Dependencies
+        run: flutter pub get
+
+      - name: Build Rust Engine and Download PDFium
+        run: dart scripts/build_engine.dart
+        
+      - name: Build Flutter Windows App
+        run: flutter build windows
+
+      - name: Zip the Release Folder
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath PDF_Converter_Windows.zip
+        shell: powershell
+
+      - name: Upload Release Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PDF_Converter_Windows
+          path: PDF_Converter_Windows.zip
+          retention-days: 7
