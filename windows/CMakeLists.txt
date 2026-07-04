@@ -94,7 +94,7 @@ install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    COMPONENT Runtime)
 
 # Install engine files if they exist
-set(ENGINE_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/engine_bin/windows")
+set(ENGINE_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../engine_bin/windows")
 if(EXISTS "${ENGINE_BIN_DIR}")
   install(DIRECTORY "${ENGINE_BIN_DIR}/"
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"

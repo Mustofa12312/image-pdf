@@ -25,6 +25,7 @@ Future<void> main() async {
     'cargo',
     ['build', '--release'],
     workingDirectory: rustDir,
+    runInShell: true,
   );
   
   cargoResult.stdout.transform(utf8.decoder).listen((data) => stdout.write(data));
@@ -54,7 +55,7 @@ Future<void> main() async {
   
   print('Extracting PDFium...');
   // We use tar because both Windows 10/11 and Linux have tar built-in now.
-  final tarResult = await Process.run('tar', ['-xzf', archivePath, '-C', pdfiumDir]);
+  final tarResult = await Process.run('tar', ['-xzf', archivePath, '-C', pdfiumDir], runInShell: true);
   if (tarResult.exitCode != 0) {
     print('Extraction failed: \${tarResult.stderr}');
     exit(1);
@@ -81,7 +82,7 @@ Future<void> main() async {
   
   // Give execution permission on Linux
   if (isLinux) {
-    await Process.run('chmod', ['+x', p.join(engineBinDir, execName)]);
+    await Process.run('chmod', ['+x', p.join(engineBinDir, execName)], runInShell: true);
   }
 
   // Copy to rust/target/release and debug so it works during development
