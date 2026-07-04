@@ -1,0 +1,62 @@
+name: Build Windows Installer
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Memungkinkan Anda menjalankan ini secara manual lewat tombol di GitHub
+
+jobs:
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Build Rust Engine
+        run: |
+          cd rust
+          cargo build --release
+          cd ..
+          mkdir -p engine_bin\windows
+          copy rust\target\release\pdf_converter_engine.exe engine_bin\windows\
+
+      - name: Download Poppler (For PDF to Image)
+        run: |
+          mkdir -p installer\poppler
+          curl -L -o poppler.zip https://github.com/oschwartz10612/poppler-windows/releases/download/v24.02.0-0/Release-24.02.0-0.zip
+          unzip poppler.zip -d installer\poppler
+          # Move contents up one level so bin is inside installer\poppler\bin
+          move installer\poppler\poppler-24.02.0\* installer\poppler\
+          rmdir installer\poppler\poppler-24.02.0
+
+      - name: Flutter Pub Get
+        run: flutter pub get
+
+      - name: Build Flutter App (Windows)
+        run: flutter build windows --release
+
+      - name: Build Installer (Inno Setup)
+        run: |
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\setup.iss
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PDFConverter-Windows-Installer
+          path: installer/Output/*.exe
