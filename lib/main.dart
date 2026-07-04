@@ -26,7 +26,7 @@ class PdfConverterApp extends StatelessWidget {
     return Consumer<SettingsController>(
       builder: (context, settings, _) {
         return MaterialApp(
-          title: 'PDF ↔ Image Converter',
+          title: 'Tamjid PDF ↔ Image Converter',
           debugShowCheckedModeBanner: false,
           themeMode: settings.themeMode,
           theme: AppTheme.light(),
