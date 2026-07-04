@@ -5,6 +5,7 @@ import 'pdf_to_image_page.dart';
 import 'image_to_pdf_page.dart';
 import 'merge_pdf_page.dart';
 import 'extract_pdf_page.dart';
+import 'word_to_image_page.dart';
 import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -55,13 +56,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
             Center(
-              child: FadeTransition(
-                opacity: _fadeAnim,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 460),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
+              child: SingleChildScrollView(
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 460),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+                      child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Logo
@@ -93,6 +95,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                         const SizedBox(height: 16),
                         _MenuCard(
+                          icon: Icons.description_rounded, iconColor: Colors.blue,
+                          label: 'Word to Image', subtitle: 'DOC / DOCX → PNG / JPG', isDark: isDark,
+                          onTap: () => _push(context, const WordToImagePage()),
+                        ),
+                        const SizedBox(height: 16),
+                        _MenuCard(
                           icon: Icons.merge_type_rounded, iconColor: AppColors.accentPrimary,
                           label: 'Merge PDFs', subtitle: 'PDF + PDF → PDF', isDark: isDark,
                           onTap: () => _push(context, const MergePdfPage()),
@@ -111,6 +119,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ),
             ),
+          ),
           ],
         ),
       ),

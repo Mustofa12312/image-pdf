@@ -6,12 +6,14 @@ import '../../core/localization.dart';
 
 class DropZoneWidget extends StatefulWidget {
   final bool isPdf; // true = PDF, false = images
+  final bool isWord; // true = Word doc
   final bool allowMultiplePdf; // if true, allows dropping/picking multiple PDFs
   final void Function(List<String> paths) onFilesDropped;
 
   const DropZoneWidget({
     super.key,
     required this.isPdf,
+    this.isWord = false,
     this.allowMultiplePdf = false,
     required this.onFilesDropped,
   });
@@ -45,6 +47,9 @@ class _DropZoneWidgetState extends State<DropZoneWidget> {
               widget.onFilesDropped([pdfs.first]);
             }
           }
+        } else if (widget.isWord) {
+          final words = paths.where((p) => RegExp(r'\.(doc|docx)$', caseSensitive: false).hasMatch(p)).toList();
+          if (words.isNotEmpty) widget.onFilesDropped([words.first]);
         } else {
           final imgs = paths
               .where((p) => RegExp(r'\.(png|jpg|jpeg)$', caseSensitive: false).hasMatch(p))
@@ -87,7 +92,7 @@ class _DropZoneWidgetState extends State<DropZoneWidget> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    widget.isPdf ? Icons.picture_as_pdf_rounded : Icons.image_rounded,
+                    widget.isPdf ? Icons.picture_as_pdf_rounded : (widget.isWord ? Icons.description_rounded : Icons.image_rounded),
                     size: 26,
                     color: _isDragging ? Colors.white : AppColors.accentPrimary,
                   ),
@@ -95,7 +100,7 @@ class _DropZoneWidgetState extends State<DropZoneWidget> {
               ),
               const SizedBox(height: 14),
               Text(
-                widget.isPdf ? loc.dropPdfHint : loc.dropImageHint,
+                widget.isPdf ? loc.dropPdfHint : (widget.isWord ? 'Drop Word Document here' : loc.dropImageHint),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
@@ -119,6 +124,17 @@ class _DropZoneWidgetState extends State<DropZoneWidget> {
         allowedExtensions: ['pdf'],
         allowMultiple: widget.allowMultiplePdf,
         dialogTitle: 'Select PDF file(s)',
+      );
+      if (result != null) {
+        final paths = result.files.where((f) => f.path != null).map((f) => f.path!).toList();
+        if (paths.isNotEmpty) widget.onFilesDropped(paths);
+      }
+    } else if (widget.isWord) {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['doc', 'docx'],
+        allowMultiple: false,
+        dialogTitle: 'Select Word Document',
       );
       if (result != null) {
         final paths = result.files.where((f) => f.path != null).map((f) => f.path!).toList();
