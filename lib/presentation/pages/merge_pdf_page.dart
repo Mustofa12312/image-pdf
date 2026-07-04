@@ -107,7 +107,8 @@ class _MergePdfPageState extends State<MergePdfPage> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Merge PDF Error: $e\n$st');
       if (mounted) {
         showDialog(
           context: context,

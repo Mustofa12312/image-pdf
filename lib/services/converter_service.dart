@@ -270,6 +270,7 @@ class ConverterService {
     if (stderr.contains('corrupt') || stderr.contains('invalid')) throw const ConversionException('err_pdf_corrupt');
     if (stderr.contains('permission') || stderr.contains('writable')) throw const ConversionException('err_folder_not_writable');
     if (stderr.contains('in use') || stderr.contains('locked')) throw const ConversionException('err_file_in_use');
+    if (stderr.trim().isNotEmpty) throw ConversionException(stderr.trim());
     throw const ConversionException('err_conversion_failed');
   }
 }
