@@ -49,7 +49,7 @@ pub fn merge_pdfs(
             .with_context(|| format!("Failed to open PDF: {}", input_path))?;
         
         merged_doc
-            .pages()
+            .pages_mut()
             .append(&input_doc)
             .with_context(|| format!("Failed to append pages from {}", input_path))?;
 
@@ -115,8 +115,8 @@ pub fn extract_pages(
         }
         let page_index = (page_number - 1) as u16;
         extracted_doc
-            .pages()
-            .copy_page_from_document(&source_doc, page_index)
+            .pages_mut()
+            .copy_page_from_document(&source_doc, page_index, i as u16)
             .with_context(|| format!("Failed to extract page {}", page_number))?;
         
         if show_progress {

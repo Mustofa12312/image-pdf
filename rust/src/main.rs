@@ -1,5 +1,6 @@
 mod pdf_to_image;
 mod image_to_pdf;
+mod pdf_manipulation;
 
 use clap::{Parser, Subcommand};
 
@@ -52,6 +53,27 @@ enum Commands {
         #[arg(long, default_value_t = false)]
         progress: bool,
     },
+    /// Merge multiple PDFs into one
+    MergePdf {
+        #[arg(long, num_args = 1..)]
+        inputs: Vec<String>,
+        #[arg(long)]
+        output: String,
+        #[arg(long, default_value_t = false)]
+        progress: bool,
+    },
+    /// Extract specific pages from a PDF
+    ExtractPdf {
+        #[arg(long)]
+        input: String,
+        #[arg(long)]
+        output: String,
+        /// Comma-separated page numbers (1-indexed)
+        #[arg(long)]
+        pages: String,
+        #[arg(long, default_value_t = false)]
+        progress: bool,
+    },
 }
 
 fn main() {
@@ -94,6 +116,30 @@ fn main() {
                 (path, rot)
             }).collect();
             match image_to_pdf::convert(&parsed, &output, &paper, &orientation, margin, progress) {
+                Ok(result) => {
+                    let json = serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string());
+                    println!("{}", json);
+                }
+                Err(e) => {
+                    eprintln!("{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::MergePdf { inputs, output, progress } => {
+            match pdf_manipulation::merge_pdfs(&inputs, &output, progress) {
+                Ok(result) => {
+                    let json = serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string());
+                    println!("{}", json);
+                }
+                Err(e) => {
+                    eprintln!("{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::ExtractPdf { input, output, pages, progress } => {
+            match pdf_manipulation::extract_pages(&input, &output, &pages, progress) {
                 Ok(result) => {
                     let json = serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string());
                     println!("{}", json);

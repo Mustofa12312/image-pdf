@@ -173,6 +173,98 @@ class ConverterService {
     );
   }
 
+  /// Merge multiple PDFs into one
+  Future<ConversionResult> mergePdfs({
+    required List<String> inputPaths,
+    required String outputPath,
+    ProgressCallback? onProgress,
+  }) async {
+    final exec = await _getExecutablePath();
+    final args = [
+      'merge-pdf',
+      '--output', outputPath,
+      '--progress',
+      '--inputs', ...inputPaths,
+    ];
+
+    final process = await Process.start(exec, args, environment: _getEnvironment(exec));
+    final outputFiles = <String>[];
+
+    await for (final line in process.stdout.transform(utf8.decoder).transform(const LineSplitter())) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      try {
+        final json = jsonDecode(trimmed) as Map<String, dynamic>;
+        if (json['type'] == 'progress') {
+          onProgress?.call(json['current'] as int, json['total'] as int);
+        } else if (json['type'] == 'output') {
+          outputFiles.add(json['file'] as String);
+        } else if (json['type'] == 'result') {
+          return ConversionResult.fromJson(json);
+        }
+      } catch (_) {}
+    }
+
+    final exitCode = await process.exitCode;
+    if (exitCode != 0) {
+      final errOut = await process.stderr.transform(utf8.decoder).join();
+      _throwRustError(errOut);
+    }
+
+    return ConversionResult(
+      success: true,
+      totalItems: 1,
+      outputFiles: [outputPath],
+    );
+  }
+
+  /// Extract specific pages from a PDF
+  Future<ConversionResult> extractPdfPages({
+    required String inputPath,
+    required String outputPath,
+    required String pages,
+    ProgressCallback? onProgress,
+  }) async {
+    final exec = await _getExecutablePath();
+    final args = [
+      'extract-pdf',
+      '--input', inputPath,
+      '--output', outputPath,
+      '--pages', pages,
+      '--progress',
+    ];
+
+    final process = await Process.start(exec, args, environment: _getEnvironment(exec));
+    final outputFiles = <String>[];
+
+    await for (final line in process.stdout.transform(utf8.decoder).transform(const LineSplitter())) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      try {
+        final json = jsonDecode(trimmed) as Map<String, dynamic>;
+        if (json['type'] == 'progress') {
+          onProgress?.call(json['current'] as int, json['total'] as int);
+        } else if (json['type'] == 'output') {
+          outputFiles.add(json['file'] as String);
+        } else if (json['type'] == 'result') {
+          return ConversionResult.fromJson(json);
+        }
+      } catch (_) {}
+    }
+
+    final exitCode = await process.exitCode;
+    if (exitCode != 0) {
+      final errOut = await process.stderr.transform(utf8.decoder).join();
+      _throwRustError(errOut);
+    }
+
+    return ConversionResult(
+      success: true,
+      totalItems: 1,
+      outputFiles: [outputPath],
+    );
+  }
+
   void _throwRustError(String stderr) {
     if (stderr.contains('password')) throw const ConversionException('err_pdf_password');
     if (stderr.contains('corrupt') || stderr.contains('invalid')) throw const ConversionException('err_pdf_corrupt');
