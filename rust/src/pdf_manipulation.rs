@@ -100,10 +100,24 @@ pub fn extract_pages(
         .create_new_pdf()
         .with_context(|| "Failed to create new PDF for extraction")?;
 
-    let page_indices: Vec<usize> = pages_str
-        .split(',')
-        .filter_map(|s| s.trim().parse::<usize>().ok())
-        .collect();
+    let mut page_indices: Vec<usize> = Vec::new();
+    for part in pages_str.split(',') {
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+        if let Some((start_str, end_str)) = part.split_once('-') {
+            if let (Ok(start), Ok(end)) = (start_str.trim().parse::<usize>(), end_str.trim().parse::<usize>()) {
+                if start <= end {
+                    page_indices.extend(start..=end);
+                } else {
+                    page_indices.extend((end..=start).rev());
+                }
+            }
+        } else if let Ok(num) = part.parse::<usize>() {
+            page_indices.push(num);
+        }
+    }
 
     let total_source_pages = source_doc.pages().len() as usize;
     let total = page_indices.len();

@@ -187,7 +187,7 @@ class _ExtractPdfPageState extends State<ExtractPdfPage> {
                       children: [
                         Text('Extraction Settings', style: TextStyle(color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 16),
-                        const Text('Enter the page numbers you want to extract into a new PDF.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
+                        const Text('Enter the page numbers or ranges you want to extract into a new PDF.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
                         const SizedBox(height: 24),
                         Text('Pages (1-indexed)', style: TextStyle(color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
@@ -195,7 +195,7 @@ class _ExtractPdfPageState extends State<ExtractPdfPage> {
                           controller: _pagesCtrl,
                           style: TextStyle(color: isDark ? AppColors.textPrimary : AppColors.lightTextPrimary, fontSize: 14),
                           decoration: InputDecoration(
-                            hintText: 'e.g. 1, 3, 5, 10',
+                            hintText: 'e.g. 1, 3-5, 10',
                             hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
                             filled: true,
                             fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,

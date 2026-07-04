@@ -74,6 +74,21 @@ enum Commands {
         #[arg(long, default_value_t = false)]
         progress: bool,
     },
+    /// Convert Word to Images (Requires LibreOffice)
+    Word2img {
+        #[arg(long)]
+        input: String,
+        #[arg(long)]
+        output_dir: String,
+        #[arg(long, default_value = "png")]
+        format: String,
+        #[arg(long, default_value_t = 300)]
+        dpi: u32,
+        #[arg(long, default_value_t = 90)]
+        quality: u8,
+        #[arg(long, default_value_t = false)]
+        progress: bool,
+    },
 }
 
 fn main() {
@@ -149,6 +164,62 @@ fn main() {
                     std::process::exit(1);
                 }
             }
+        }
+        Commands::Word2img { input, output_dir, format, dpi, quality, progress } => {
+            let libreoffice = if cfg!(windows) {
+                "soffice"
+            } else {
+                "libreoffice"
+            };
+
+            let temp_dir = std::env::temp_dir();
+            let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis();
+            let temp_out = temp_dir.join(format!("word2img_{}", timestamp));
+            let _ = std::fs::create_dir_all(&temp_out);
+
+            let status = std::process::Command::new(libreoffice)
+                .args(&[
+                    "--headless",
+                    "--convert-to", "pdf",
+                    &input,
+                    "--outdir", temp_out.to_str().unwrap()
+                ])
+                .status();
+
+            match status {
+                Ok(s) if s.success() => {
+                    let input_path = std::path::Path::new(&input);
+                    let pdf_path = temp_out.join(input_path.file_stem().unwrap()).with_extension("pdf");
+                    if pdf_path.exists() {
+                        match pdf_to_image::convert(pdf_path.to_str().unwrap(), &output_dir, &format, dpi, quality, &[], progress) {
+                            Ok(result) => {
+                                let json = serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string());
+                                println!("{}", json);
+                            }
+                            Err(e) => {
+                                eprintln!("{}", e);
+                                let _ = std::fs::remove_dir_all(&temp_out);
+                                std::process::exit(1);
+                            }
+                        }
+                    } else {
+                        eprintln!("Error: LibreOffice succeeded but PDF was not found.");
+                        let _ = std::fs::remove_dir_all(&temp_out);
+                        std::process::exit(1);
+                    }
+                }
+                Ok(s) => {
+                    eprintln!("Error: LibreOffice exited with status {}", s);
+                    let _ = std::fs::remove_dir_all(&temp_out);
+                    std::process::exit(1);
+                }
+                Err(e) => {
+                    eprintln!("Error: Failed to run LibreOffice (is it installed and in PATH?). {}", e);
+                    let _ = std::fs::remove_dir_all(&temp_out);
+                    std::process::exit(1);
+                }
+            }
+            let _ = std::fs::remove_dir_all(&temp_out);
         }
     }
 }

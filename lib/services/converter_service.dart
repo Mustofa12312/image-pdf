@@ -265,6 +265,62 @@ class ConverterService {
     );
   }
 
+  /// Convert Word to images
+  Future<ConversionResult> convertWordToImages({
+    required String wordPath,
+    required String outputDir,
+    required String format,
+    required int dpi,
+    required int jpgQuality,
+    ProgressCallback? onProgress,
+  }) async {
+    final exec = await _getExecutablePath();
+
+    final args = [
+      'word2img',
+      '--input', wordPath,
+      '--output-dir', outputDir,
+      '--format', format,
+      '--dpi', dpi.toString(),
+      '--quality', jpgQuality.toString(),
+      '--progress',
+    ];
+
+    final process = await Process.start(exec, args, environment: _getEnvironment(exec));
+    int current = 0;
+    int total = 0;
+    final outputFiles = <String>[];
+
+    await for (final line in process.stdout.transform(utf8.decoder).transform(const LineSplitter())) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      try {
+        final json = jsonDecode(trimmed) as Map<String, dynamic>;
+        if (json['type'] == 'progress') {
+          current = json['current'] as int;
+          total = json['total'] as int;
+          onProgress?.call(current, total);
+        } else if (json['type'] == 'output') {
+          outputFiles.add(json['file'] as String);
+        } else if (json['type'] == 'result') {
+          return ConversionResult.fromJson(json);
+        }
+      } catch (_) {}
+    }
+
+    final exitCode = await process.exitCode;
+    if (exitCode != 0) {
+      final errOut = await process.stderr.transform(utf8.decoder).join();
+      _throwRustError(errOut);
+    }
+
+    return ConversionResult(
+      success: true,
+      totalItems: outputFiles.length,
+      outputFiles: outputFiles,
+    );
+  }
+
   void _throwRustError(String stderr) {
     if (stderr.contains('password')) throw const ConversionException('err_pdf_password');
     if (stderr.contains('corrupt') || stderr.contains('invalid')) throw const ConversionException('err_pdf_corrupt');
