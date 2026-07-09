@@ -129,10 +129,8 @@ procedure InitializeWizard;
 begin
   // Custom welcome message
   WizardForm.WelcomeLabel2.Caption :=
-    'This will install ' + '{#AppName}' + ' ' + '{#AppVersion}' + ' on your computer.' + #13#10 +
-    #13#10 +
+    'This will install ' + '{#AppName}' + ' ' + '{#AppVersion}' + ' on your computer.' + #13#10 + #13#10 +
     'PDF Converter is a fast, offline PDF ↔ Image conversion tool.' + #13#10 +
-    'Supports PDF to PNG/JPG, Image to PDF, Word to Image, and more.' + #13#10 +
-    #13#10 +
+    'Supports PDF to PNG/JPG, Image to PDF, Word to Image, and more.' + #13#10 + #13#10 +
     'Click Next to continue.';
 end;
