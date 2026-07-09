@@ -63,6 +63,10 @@ pub fn merge_pdfs(
         }
     }
 
+    if let Some(parent) = Path::new(output_path).parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+
     merged_doc
         .save_to_file(&Path::new(output_path))
         .with_context(|| format!("Failed to save merged PDF to {}", output_path))?;
@@ -141,6 +145,10 @@ pub fn extract_pages(
             };
             println!("{}", serde_json::to_string(&progress).unwrap());
         }
+    }
+
+    if let Some(parent) = Path::new(output_path).parent() {
+        let _ = std::fs::create_dir_all(parent);
     }
 
     extracted_doc

@@ -224,7 +224,19 @@ fn run_pdftoppm(
     first_page: Option<usize>,
     last_page: Option<usize>,
 ) -> Result<()> {
-    let mut cmd = Command::new("pdftoppm");
+    let mut pdftoppm_cmd = "pdftoppm".to_string();
+    if cfg!(windows) {
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                let bundled = exe_dir.join("poppler").join("bin").join("pdftoppm.exe");
+                if bundled.exists() {
+                    pdftoppm_cmd = bundled.to_string_lossy().to_string();
+                }
+            }
+        }
+    }
+
+    let mut cmd = Command::new(&pdftoppm_cmd);
     cmd.arg(fmt_flag)
         .arg("-r")
         .arg(dpi.to_string())
@@ -261,8 +273,20 @@ fn run_pdftoppm(
 
 /// Get total page count via pdftoppm -l flag trick, or pdfinfo.
 fn get_page_count_pdftoppm(input: &str) -> Result<usize> {
+    let mut pdfinfo_cmd = "pdfinfo".to_string();
+    if cfg!(windows) {
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                let bundled = exe_dir.join("poppler").join("bin").join("pdfinfo.exe");
+                if bundled.exists() {
+                    pdfinfo_cmd = bundled.to_string_lossy().to_string();
+                }
+            }
+        }
+    }
+
     // Use pdfinfo if available
-    let output = Command::new("pdfinfo")
+    let output = Command::new(&pdfinfo_cmd)
         .arg(input)
         .output();
 

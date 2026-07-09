@@ -126,6 +126,10 @@ pub fn convert(
         );
     }
 
+    if let Some(parent) = std::path::Path::new(output_path).parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+
     let file = File::create(output_path)
         .with_context(|| format!("Cannot create: {}", output_path))?;
     doc.save(&mut BufWriter::new(file))
