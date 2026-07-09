@@ -28,13 +28,8 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Build Rust Engine
-        run: |
-          cd rust
-          cargo build --release
-          cd ..
-          mkdir -p engine_bin\windows
-          copy rust\target\release\pdf_converter_engine.exe engine_bin\windows\
+      - name: Build Rust Engine and Download PDFium
+        run: dart scripts/build_engine.dart
 
       - name: Download Poppler (For PDF to Image)
         run: |

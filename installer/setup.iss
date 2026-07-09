@@ -82,7 +82,7 @@ Source: "{#BuildDir}\data\*";                  DestDir: "{app}\data";         Fl
 
 ; ── Rust PDF engine ───────────────────────────────────────────────────────────
 Source: "..\engine_bin\windows\pdf_converter_engine.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\linux\x64\release\bundle\libpdfium.so"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "..\engine_bin\windows\pdfium.dll"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 
 ; ── Poppler tools (pdftoppm.exe) for PDF→Image conversion ────────────────────
 ; Download from: https://github.com/oschwartz10612/poppler-windows/releases
